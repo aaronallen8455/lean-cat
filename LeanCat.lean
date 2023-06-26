@@ -136,7 +136,7 @@ def Hom {C : Cat} (c : C) : Funct C type_cat :=
   }
 
 def precomp_hom {C : Cat} {c d : C} (f : C.mor c d) : NT (Hom d) (Hom c) :=
-  { eta := λ a g => C.comp g f
+  { eta := λ _a g => C.comp g f
   , nt_law := by
       intro a b g
       simp
@@ -191,12 +191,11 @@ def funct_cat {Dom Cod : Cat} : Cat :=
   , mor := NT
   , comp := λ α β =>
       { eta := λ x => Cod.comp (α.eta x) (β.eta x)
-      , nt_law := λ C => by
+      , nt_law := λ mor => by
           simp
-          have l1 := α.nt_law C
-          have l2 := β.nt_law C
+          -- rw [←Cod.mor_assoc, β.nt_law mor, Cod.mor_assoc, α.nt_law mor, Cod.mor_assoc]
+          -- ^ this is correct but very slow to compile for some reason.
           sorry
-          --rw [←Cod.mor_assoc, l2, Cod.mor_assoc, l1, Cod.mor_assoc] -- this is correct but slow to compile!
       }
   , iden := λ F =>
     { eta := λ a => F.map_mor (Dom.iden a)
@@ -275,7 +274,7 @@ theorem yoneda_lemma :
             = F.map_mor f (Φ F c α)
         ) :=
   ⟨ λ _F c nt => nt.eta c (C.iden c)
-  , ⟨ λ F c fc =>
+  , λ F c fc =>
         { eta := λ _a ca => F.map_mor ca fc
         , nt_law := by
             intro a b f
@@ -289,30 +288,38 @@ theorem yoneda_lemma :
               simp
               rw [c_comp, ←F.fmap_law]
         }
-    , by
-      intro F c
-      constructor
-      . intro d
+  , by
+    intro F c
+    constructor
+    . intro d
+      simp
+      rw [F.fmap_id]
+      rfl
+    . constructor
+      . intro α
         simp
-        rw [F.fmap_id]
-        rfl
+        have rw_lem a (ca : C.mor c a) : F.map_mor ca (α.eta c (C.iden c)) = type_cat.comp (F.map_mor ca) (α.eta c) (C.iden c) := by rfl
+        have rw_lem2 a (ca : C.mor c a) : type_cat.comp (α.eta a) ((Hom c).map_mor ca) (C.iden c) = α.eta a (C.comp ca (C.iden c)) := by rfl
+        conv =>
+          lhs
+          arg 1
+          intro a ca
+          rw [rw_lem, ←α.nt_law, rw_lem2, C.right_id]
       . constructor
-        . intro α
+        . intro G α β 
+          rfl
+        . intro f α
           simp
-          have rw_lem a (ca : C.mor c a) : F.map_mor ca (α.eta c (C.iden c)) = type_cat.comp (F.map_mor ca) (α.eta c) (C.iden c) := by rfl
-          have rw_lem2 a (ca : C.mor c a) : type_cat.comp (α.eta a) ((Hom c).map_mor ca) (C.iden c) = α.eta a (C.comp ca (C.iden c)) := by rfl
-          conv =>
-            lhs
-            arg 1
-            intro a ca
-            rw [rw_lem, ←α.nt_law, rw_lem2, C.right_id]
-        . constructor
-          . intro G α β 
-            rfl
-          . intro f α
-            simp
-            sorry
-    ⟩⟩
+          have eta_def : NT.eta (Cat.comp funct_cat α (precomp_hom f)) d
+                        = α.eta d ∘ (λ g => C.comp g f) := by rfl
+          rw [eta_def]
+          simp
+          rw [C.left_id]
+          have rw_lem : F.map_mor f (α.eta c (C.iden c)) = (type_cat.comp (F.map_mor f) (α.eta c)) (C.iden c) := by rfl
+          rw [rw_lem, ←α.nt_law]
+          have rw_lem2 : type_cat.comp (α.eta d) ((Hom c).map_mor f) (C.iden c) = α.eta d (C.comp f (C.iden c)) := by rfl
+          rw [rw_lem2, C.right_id]
+    ⟩
 
 structure Adjunction (L : Funct C D) (R : Funct D C) where
   unit : NT (I C) (funct_comp R L)
