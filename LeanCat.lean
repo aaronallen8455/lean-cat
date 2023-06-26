@@ -189,13 +189,17 @@ def ContraHom {C : Cat} (c : C) : ContraFunct C type_cat :=
 def funct_cat {Dom Cod : Cat} : Cat :=
   { obj := Funct Dom Cod
   , mor := NT
-  , comp := λ α β =>
+  , comp := λ {F G H} α β =>
       { eta := λ x => Cod.comp (α.eta x) (β.eta x)
-      , nt_law := λ mor => by
+      , nt_law := λ {a b} mor => by
           simp
+          exact (Eq.symm (Cod.mor_assoc (α.eta b) (β.eta b) (F.map_mor mor))).trans
+                $ (congrArg (Cat.comp Cod (NT.eta α b)) (β.nt_law mor)).trans
+                $ (Cod.mor_assoc (α.eta b) (G.map_mor mor) (β.eta a)).trans
+                $ (congrArg (λ x => Cod.comp x (NT.eta β a)) (α.nt_law mor)).trans
+                $ Eq.symm (Cod.mor_assoc (H.map_mor mor) (α.eta a) (β.eta a))
           -- rw [←Cod.mor_assoc, β.nt_law mor, Cod.mor_assoc, α.nt_law mor, Cod.mor_assoc]
           -- ^ this is correct but very slow to compile for some reason.
-          sorry
       }
   , iden := λ F =>
     { eta := λ a => F.map_mor (Dom.iden a)
