@@ -49,6 +49,7 @@ structure ContraFunct (Dom : Cat) (Cod : Cat) where
   fmap_law : ∀ {a b c} (f : Dom.mor b c) (g : Dom.mor a b),
                Cod.comp (map_mor g) (map_mor f) = map_mor (Dom.comp f g)
 
+-- Natural transformation
 structure NT {Dom Cod : Cat} (F : Funct Dom Cod) (G : Funct Dom Cod) where
   eta : ∀ (a : Dom), Cod.mor (F.map_obj a) (G.map_obj a)
   nt_law : ∀ {a b} (mor : Dom.mor a b),
@@ -291,12 +292,26 @@ theorem yoneda_lemma :
     , by
       intro F c
       constructor
-      . sorry
+      . intro d
+        simp
+        rw [F.fmap_id]
+        rfl
       . constructor
-        . sorry
+        . intro α
+          simp
+          have rw_lem a (ca : C.mor c a) : F.map_mor ca (α.eta c (C.iden c)) = type_cat.comp (F.map_mor ca) (α.eta c) (C.iden c) := by rfl
+          have rw_lem2 a (ca : C.mor c a) : type_cat.comp (α.eta a) ((Hom c).map_mor ca) (C.iden c) = α.eta a (C.comp ca (C.iden c)) := by rfl
+          conv =>
+            lhs
+            arg 1
+            intro a ca
+            rw [rw_lem, ←α.nt_law, rw_lem2, C.right_id]
         . constructor
-          . sorry
-          . sorry
+          . intro G α β 
+            rfl
+          . intro f α
+            simp
+            sorry
     ⟩⟩
 
 structure Adjunction (L : Funct C D) (R : Funct D C) where
