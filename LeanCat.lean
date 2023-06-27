@@ -3,14 +3,32 @@ structure Cat where
   mor : obj -> obj -> Type u2
   comp : {a b c : obj} → mor b c → mor a b → mor a c
   iden : (a : obj) -> mor a a
-  mor_assoc : ∀ {a b c d} (f : mor c d) (g : mor b c) (h : mor a b),
+  comp_assoc : ∀ {a b c d} (f : mor c d) (g : mor b c) (h : mor a b),
               comp f (comp g h) = comp (comp f g) h
   left_id : ∀ {a b} (f : mor a b), comp (iden b) f = f
   right_id : ∀ {a b} (f : mor a b), comp f (iden a) = f
 
+-- Opposite category
+def Op (C : Cat) : Cat :=
+  { obj := C.obj
+  , mor := λ a b => C.mor b a
+  , comp := λ f g => C.comp g f
+  , iden := C.iden
+  , comp_assoc := by
+      intros
+      simp [*, C.comp_assoc]
+  , left_id := by
+      intros
+      simp [*, C.right_id]
+  , right_id := by
+      intros
+      simp [*, C.left_id]
+  }
+
 instance : CoeSort Cat (Type u1) where
   coe C := C.obj
 
+-- Covariant functor
 structure Funct (Dom : Cat) (Cod : Cat) where
   map_obj : Dom → Cod
   map_mor : {x y : Dom} → Dom.mor x y → Cod.mor (map_obj x) (map_obj y)
@@ -42,12 +60,8 @@ def I (C : Cat) : Funct C C :=
   , fmap_law := by simp
   }
 
-structure ContraFunct (Dom : Cat) (Cod : Cat) where
-  map_obj : Dom → Cod
-  map_mor : Dom.mor x y → Cod.mor (map_obj y) (map_obj x)
-  fmap_id : {a : Dom} → map_mor (Dom.iden a) = Cod.iden (map_obj a)
-  fmap_law : ∀ {a b c} (f : Dom.mor b c) (g : Dom.mor a b),
-               Cod.comp (map_mor g) (map_mor f) = map_mor (Dom.comp f g)
+-- Contravariant functor
+def ContraFunct (Dom Cod : Cat) := Funct Dom (Op Cod)
 
 -- Natural transformation
 structure NT {Dom Cod : Cat} (F : Funct Dom Cod) (G : Funct Dom Cod) where
@@ -74,13 +88,13 @@ def vert_nt_comp {A B C : Cat} {F₁ G₁ : Funct A B} {F₂ G₂ : Funct B C}
       have f_comp_def (f : A.mor a b) : (funct_comp F₂ F₁).map_mor f = F₂.map_mor (F₁.map_mor f) := by rfl
       rw [ ←(α.nt_law (β.eta b))
          , f_comp_def
-         , ←C.mor_assoc
+         , ←C.comp_assoc
          , F₂.fmap_law
          , β.nt_law fab
          , ←F₂.fmap_law
-         , C.mor_assoc
+         , C.comp_assoc
          , α.nt_law (G₁.map_mor fab)
-         , ←C.mor_assoc
+         , ←C.comp_assoc
          , α.nt_law (β.eta a)
          ]
       rfl
@@ -105,7 +119,7 @@ def type_cat.{u} : Cat :=
   { obj := Type u
   , mor := (· → ·)
   , iden := λ a => @id a
-  , mor_assoc := λ _ _ _ => rfl
+  , comp_assoc := λ _ _ _ => rfl
   , comp := (· ∘ ·)
   , left_id := λ _ => rfl
   , right_id := λ _ => rfl 
@@ -132,7 +146,7 @@ def Hom {C : Cat} (c : C) : Funct C type_cat :=
       conv =>
         lhs
         intro g1
-        rw [C.mor_assoc]
+        rw [C.comp_assoc]
   }
 
 def precomp_hom {C : Cat} {c d : C} (f : C.mor c d) : NT (Hom d) (Hom c) :=
@@ -152,7 +166,7 @@ def precomp_hom {C : Cat} {c d : C} (f : C.mor c d) : NT (Hom d) (Hom c) :=
                       := by conv =>
                               lhs
                               intro g1
-                              rw [←C.mor_assoc]
+                              rw [←C.comp_assoc]
 
       have un_arg_def : (fun g_1 => C.comp g (C.comp g_1 f))
                       = (fun g_1 => Cat.comp C g g_1) ∘ fun g => Cat.comp C g f
@@ -175,14 +189,14 @@ def ContraHom {C : Cat} (c : C) : ContraFunct C type_cat :=
   , fmap_law := by
       intro a b d f g
       simp
-      have comp_def a b c (x : b → c) (y : a → b) : type_cat.comp x y = x ∘ y := by rfl 
+      have comp_def a b c (x : a → b) (y : b → c) : (Op type_cat).comp x y = y ∘ x := by rfl 
       rw [comp_def]
       have arg_def : ((fun g_1 => C.comp g_1 g) ∘ fun (g : C.mor d c) => C.comp g f) = fun g_1 => C.comp (C.comp g_1 f) g := by rfl
       rw [arg_def]
       conv =>
         lhs
         intro g1
-        rw [←C.mor_assoc]
+        rw [←C.comp_assoc]
   }
 
 -- The category of functors
@@ -193,12 +207,12 @@ def funct_cat {Dom Cod : Cat} : Cat :=
       { eta := λ x => Cod.comp (α.eta x) (β.eta x)
       , nt_law := λ {a b} mor => by
           simp
-          exact (Eq.symm (Cod.mor_assoc (α.eta b) (β.eta b) (F.map_mor mor))).trans
+          exact (Eq.symm (Cod.comp_assoc (α.eta b) (β.eta b) (F.map_mor mor))).trans
                 $ (congrArg (Cat.comp Cod (NT.eta α b)) (β.nt_law mor)).trans
-                $ (Cod.mor_assoc (α.eta b) (G.map_mor mor) (β.eta a)).trans
+                $ (Cod.comp_assoc (α.eta b) (G.map_mor mor) (β.eta a)).trans
                 $ (congrArg (λ x => Cod.comp x (NT.eta β a)) (α.nt_law mor)).trans
-                $ Eq.symm (Cod.mor_assoc (H.map_mor mor) (α.eta a) (β.eta a))
-          -- rw [←Cod.mor_assoc, β.nt_law mor, Cod.mor_assoc, α.nt_law mor, Cod.mor_assoc]
+                $ Eq.symm (Cod.comp_assoc (H.map_mor mor) (α.eta a) (β.eta a))
+          -- rw [←Cod.comp_assoc, β.nt_law mor, Cod.comp_assoc, α.nt_law mor, Cod.comp_assoc]
           -- ^ this is correct but very slow to compile for some reason.
       }
   , iden := λ F =>
@@ -208,7 +222,7 @@ def funct_cat {Dom Cod : Cat} : Cat :=
         simp
         rw [F.fmap_id, Cod.left_id, F.fmap_id, Cod.right_id]
     }
-  , mor_assoc := by simp [Cod.mor_assoc]
+  , comp_assoc := by simp [Cod.comp_assoc]
   , left_id := by
       intro _F G _α
       simp
@@ -233,7 +247,7 @@ def category_cat : Cat :=
   , mor := Funct
   , comp := funct_comp
   , iden := I
-  , mor_assoc := by
+  , comp_assoc := by
       intro _A _B _C _D
       intro _F _G _H
       simp
@@ -331,3 +345,48 @@ structure Adjunction (L : Funct C D) (R : Funct D C) where
   -- triangle identities
   tri_L : id_nt L = funct_cat.comp (whisker_left L counit) (whisker_right unit L)
   tri_R : id_nt R = funct_cat.comp (whisker_right counit R) (whisker_left R unit)
+
+def monomorphism {C : Cat} {a b : C} (m : C.mor a b) : Prop :=
+  ∀ {a'} (n p : C.mor a' a), C.comp m n = C.comp m p → n = p
+
+def epimorphism {C : Cat} {a b : C} (m : C.mor a b) : Prop :=
+  ∀ {b'} (n p : C.mor b b'), C.comp n m = C.comp p m → n = p
+
+def isomorphism {C : Cat} {a b : C} (m : C.mor a b) : Prop :=
+  ∃ (n : C.mor b a), C.comp n m = C.iden a ∧ C.comp m n = C.iden b
+
+theorem mono_mono {C : Cat} {a b c : C} : ∀ (m : C.mor a b) (n : C.mor b c),
+    monomorphism m → monomorphism n → monomorphism (C.comp n m) := by
+  intro m n monoM monoN _x _o _p h
+  rw [←C.comp_assoc, ←C.comp_assoc] at h
+  have h2 := monoN _ _ h
+  exact monoM _ _ h2
+
+theorem epi_epi {C : Cat} {a b c : C} : ∀ (m : C.mor a b) (n : C.mor b c),
+    epimorphism m → epimorphism n → epimorphism (C.comp n m) := by
+  intro m n epiM epiN x p o h
+  rw [C.comp_assoc, C.comp_assoc] at h
+  have h2 := epiM _ _ h
+  exact epiN _ _ h2
+
+theorem epi_impl_epi {C : Cat} {a b c : C} : ∀ (m : C.mor a b) (n : C.mor b c),
+    epimorphism (C.comp n m) → epimorphism n := by
+  intro m n epiC x o p h
+  have h2 := congrArg (λ x => C.comp x m) h
+  simp at h2
+  rw [←C.comp_assoc, ←C.comp_assoc] at h2
+  exact epiC o p h2
+
+theorem iso_impl_epi_mono {C : Cat} {a b : C} : ∀ (m : C.mor a b),
+    isomorphism m → epimorphism m ∧ monomorphism m := by
+  intro m ⟨n, hl, hr⟩
+  constructor
+  . intro x o p h2
+    have h3 := congrArg (λ f => C.comp f n) h2
+    simp at h3
+    rw [←C.comp_assoc, ←C.comp_assoc, hr, C.right_id, C.right_id] at h3
+    exact h3
+  . intro x o p h2
+    have h3 := congrArg (C.comp n) h2
+    rw [C.comp_assoc, C.comp_assoc, hl, C.left_id, C.left_id] at h3
+    exact h3
