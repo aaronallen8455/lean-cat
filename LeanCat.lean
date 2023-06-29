@@ -1,6 +1,6 @@
-structure Cat where
-  obj : Type u1
-  mor : obj -> obj -> Type u2
+structure Cat.{u1, u2} where
+  obj : Sort u1
+  mor : obj -> obj -> Sort u2
   comp : {a b c : obj} → mor b c → mor a b → mor a c
   iden : (a : obj) -> mor a a
   comp_assoc : ∀ {a b c d} (f : mor c d) (g : mor b c) (h : mor a b),
@@ -69,13 +69,6 @@ structure NT {Dom Cod : Cat} (F : Funct Dom Cod) (G : Funct Dom Cod) where
   nt_law : ∀ {a b} (mor : Dom.mor a b),
              Cod.comp (eta b) (F.map_mor mor) = Cod.comp (G.map_mor mor) (eta a)
 
--- a natural isomorphism between functors
-def nat_iso (F : Funct C D) (G : Funct C D) : Prop :=
-  ∃ (α : NT F G) (β : NT G F), ∀ (c : C),
-    (D.comp (β.eta c) (α.eta c) = D.iden (F.map_obj c))
-    ∧
-    (D.comp (α.eta c) (β.eta c) = D.iden (G.map_obj c)) 
-
 def vert_nt_comp {A B C : Cat} {F₁ G₁ : Funct A B} {F₂ G₂ : Funct B C}
       (α : NT F₂ G₂) (β : NT F₁ G₁) : NT (funct_comp F₂ F₁) (funct_comp G₂ G₁) :=
   { eta := λ x =>
@@ -124,6 +117,8 @@ def type_cat.{u} : Cat :=
   , left_id := λ _ => rfl
   , right_id := λ _ => rfl 
   }
+
+def HomSet {C : Cat} (a b : C) : type_cat := C.mor a b
 
 -- Covariant hom functor
 def Hom {C : Cat} (c : C) : Funct C type_cat :=
@@ -222,7 +217,13 @@ def funct_cat {Dom Cod : Cat} : Cat :=
         simp
         rw [F.fmap_id, Cod.left_id, F.fmap_id, Cod.right_id]
     }
-  , comp_assoc := by simp [Cod.comp_assoc]
+  , comp_assoc := by
+      intros
+      simp
+      conv =>
+        lhs
+        intro x
+        rw [Cod.comp_assoc]
   , left_id := by
       intro _F G _α
       simp
@@ -267,9 +268,6 @@ def category_cat : Cat :=
         lhs
         args
   }
-
--- Representable functor
-def representable (F : Funct C type_cat) : Prop := ∃ (c : C), nat_iso F (Hom c)
 
 theorem yoneda_lemma :
     ∃ (Φ : ∀ F c, NT (Hom c) F → F.map_obj c)
@@ -355,12 +353,55 @@ def epimorphism {C : Cat} {a b : C} (m : C.mor a b) : Prop :=
 def isomorphism {C : Cat} {a b : C} (m : C.mor a b) : Prop :=
   ∃ (n : C.mor b a), C.comp n m = C.iden a ∧ C.comp m n = C.iden b
 
+def endomorphism {C : Cat} {a b : C} (_ : C.mor a b) : Prop := a = b
+
+def automorphism {C : Cat} {a b : C} (m : C.mor a b) : Prop := isomorphism m ∧ endomorphism m
+
+-- a natural isomorphism between functors
+-- TODO what can be done about these universe params?
+def nat_iso {C : Cat.{u1 + 1, u1}} {D : Cat.{u2 + 1, u2}} (F : Funct C D) (G : Funct C D) : Prop :=
+  ∃ (α : NT F G), @isomorphism funct_cat F G α
+
+-- Representable functor
+def representable (F : Funct C type_cat) : Prop := ∃ (c : C), nat_iso F (Hom c)
+
+def groupoid (C : Cat) : Prop := ∀ {a b : C} (m : C.mor a b), isomorphism m
+
+def discrete (C : Cat) : Prop := ∀ (a b : C), a ≠ b → ¬(∃ (_ : C.mor a b), true)
+
+def thin (C : Cat) : Prop := ∀ (a b : C), C.mor a b = Sort 0
+
+def poset_cat : Cat :=
+  { obj := Nat
+  , mor := (· ≤ ·)
+  , comp := λ a b => Nat.le_trans b a
+  , iden := Nat.le_refl
+  , left_id := by
+      intros
+      rfl
+  , right_id := by
+      intros
+      rfl
+  , comp_assoc := by
+      intros
+      rfl
+  }
+
+def skeletal (C : Cat) : Prop := ∀ {a b : C} (m : C.mor a b), isomorphism m → automorphism m
+
 theorem mono_mono {C : Cat} {a b c : C} : ∀ (m : C.mor a b) (n : C.mor b c),
     monomorphism m → monomorphism n → monomorphism (C.comp n m) := by
   intro m n monoM monoN _x _o _p h
   rw [←C.comp_assoc, ←C.comp_assoc] at h
   have h2 := monoN _ _ h
   exact monoM _ _ h2
+
+theorem mono_impl_mono {C : Cat} {a b c : C} : ∀ (m : C.mor a b) (n : C.mor b c),
+    monomorphism (C.comp n m) → monomorphism m := by
+  intro m n mono x p q h
+  have h2 := congrArg (C.comp n) h
+  rw [C.comp_assoc, C.comp_assoc] at h2
+  exact mono p q h2
 
 theorem epi_epi {C : Cat} {a b c : C} : ∀ (m : C.mor a b) (n : C.mor b c),
     epimorphism m → epimorphism n → epimorphism (C.comp n m) := by
@@ -390,3 +431,33 @@ theorem iso_impl_epi_mono {C : Cat} {a b : C} : ∀ (m : C.mor a b),
     have h3 := congrArg (C.comp n) h2
     rw [C.comp_assoc, C.comp_assoc, hl, C.left_id, C.left_id] at h3
     exact h3
+
+theorem epi_mono_factor {C : Cat} {a b : C} : ∀ (m : C.mor a b) (n : C.mor b a),
+    C.comp n m = C.iden a → monomorphism m ∧ epimorphism n := by
+  intro m n h
+  constructor
+  . intro x p q h2
+    have h3 := congrArg (C.comp n) h2
+    rw [C.comp_assoc, C.comp_assoc, h, C.left_id, C.left_id] at h3
+    exact h3
+  . intro x p q h2
+    have h3 := congrArg (λ f => C.comp f m) h2
+    simp at h3
+    rw [←C.comp_assoc, ←C.comp_assoc, h, C.right_id, C.right_id] at h3
+    exact h3
+
+def injective {A B : type_cat} (f : A → B) : Prop := ∀ (x y : A) (z : B), f x = z ∧ f y = z → x = y
+def surjective {A B : type_cat} (f : A → B) : Prop := ∀ (x : B), ∃ (y : A), f y = x
+
+theorem mono_inj_post {C : Cat} {a b : C} (f : C.mor a b) :
+    monomorphism f ↔ (∀ c, injective (λ (g : C.mor c a) => C.comp f g)) := by
+  constructor
+  . intro mono _ x y _ h
+    simp at h
+    have ⟨hl, hr⟩ := h
+    exact mono x y (hl.trans hr.symm)
+  . intro h x n p h2
+    simp at h
+    have h3 := h x n p (C.comp f p)
+    simp at h3
+    exact h3 h2
