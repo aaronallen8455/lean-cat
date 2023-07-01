@@ -69,7 +69,7 @@ structure NT {Dom Cod : Cat} (F : Funct Dom Cod) (G : Funct Dom Cod) where
   nt_law : ∀ {a b} (mor : Dom.mor a b),
              Cod.comp (eta b) (F.map_mor mor) = Cod.comp (G.map_mor mor) (eta a)
 
-def vert_nt_comp {A B C : Cat} {F₁ G₁ : Funct A B} {F₂ G₂ : Funct B C}
+def horiz_nt_comp {A B C : Cat} {F₁ G₁ : Funct A B} {F₂ G₂ : Funct B C}
       (α : NT F₂ G₂) (β : NT F₁ G₁) : NT (funct_comp F₂ F₁) (funct_comp G₂ G₁) :=
   { eta := λ x =>
       let f := α.eta (F₁.map_obj x)
@@ -102,10 +102,10 @@ def id_nt (F : Funct C D) : NT F F :=
   }
 
 def whisker_left (F : Funct C D) (α : NT G H) : NT (funct_comp G F) (funct_comp H F) :=
-  vert_nt_comp α (id_nt F)
+  horiz_nt_comp α (id_nt F)
 
 def whisker_right {F G : Funct C D} (α : NT F G) (H : Funct D E) : NT (funct_comp H F) (funct_comp H G) :=
-  vert_nt_comp (id_nt H) α
+  horiz_nt_comp (id_nt H) α
 
 -- The category of types
 def type_cat.{u} : Cat :=
@@ -367,9 +367,11 @@ def representable (F : Funct C type_cat) : Prop := ∃ (c : C), nat_iso F (Hom c
 
 def groupoid (C : Cat) : Prop := ∀ {a b : C} (m : C.mor a b), isomorphism m
 
-def discrete (C : Cat) : Prop := ∀ (a b : C), a ≠ b → ¬(∃ (_ : C.mor a b), true)
+def discrete (C : Cat) : Prop := ∀ (a b : C), ∃ (_ : C.mor a b), a = b
 
-def thin (C : Cat) : Prop := ∀ (a b : C), C.mor a b = Sort 0
+def thin (C : Cat) : Prop := ∀ (a b : C) (m n : C.mor a b), m = n
+
+def skeletal (C : Cat) : Prop := ∀ {a b : C} (m : C.mor a b), isomorphism m → automorphism m
 
 def poset_cat : Cat :=
   { obj := Nat
@@ -387,7 +389,16 @@ def poset_cat : Cat :=
       rfl
   }
 
-def skeletal (C : Cat) : Prop := ∀ {a b : C} (m : C.mor a b), isomorphism m → automorphism m
+theorem thin_poset : thin poset_cat := by
+  intro _a _b m _n
+  rfl
+
+theorem skeletal_poset : skeletal poset_cat := by
+  intro _a _b m iso
+  constructor
+  . assumption
+  . have ⟨n, _⟩ := iso
+    exact Nat.le_antisymm m n
 
 theorem mono_mono {C : Cat} {a b c : C} : ∀ (m : C.mor a b) (n : C.mor b c),
     monomorphism m → monomorphism n → monomorphism (C.comp n m) := by
@@ -457,7 +468,18 @@ theorem mono_inj_post {C : Cat} {a b : C} (f : C.mor a b) :
     have ⟨hl, hr⟩ := h
     exact mono x y (hl.trans hr.symm)
   . intro h x n p h2
-    simp at h
     have h3 := h x n p (C.comp f p)
     simp at h3
     exact h3 h2
+
+theorem epi_inj_pre {C : Cat} {a b : C} (f : C.mor a b) :
+    epimorphism f ↔ (∀ c, injective (λ (g : C.mor b c) => C.comp g f)) := by
+  constructor
+  . intro epi c x y z h
+    simp at h
+    have ⟨hl, hr⟩ := h
+    exact epi x y (hl.trans hr.symm)
+  . intro h x n p h2
+    have h3 := h x n p (C.comp n f)
+    simp at h3
+    exact h3 h2.symm
