@@ -69,8 +69,8 @@ theorem yoneda_lemma :
           rw [rw_lem2, C.right_id]
     ⟩
 
-def yoneda_embedding.{u1, u2} (C : Cat.{u1, u2+1}) : Funct C (presheaves C) :=
-  { map_obj := ContraHom'
+def yoneda_embedding.{u1, u2} (C : Cat.{u1, u2+1}) : Funct.{u1, u2+1} C (presheaves.{u1, u2} C) :=
+  { map_obj := λ a => ContraHom' a
   , map_mor := λ m => precomp_hom m
   , fmap_id := by
       intro a
@@ -97,5 +97,32 @@ def yoneda_embedding.{u1, u2} (C : Cat.{u1, u2+1}) : Funct C (presheaves C) :=
         rw [C.comp_assoc]
   }
 
---theorem yoneda_embedding_fully_faithful : ∀ (C : Cat.{u1, u2+1}), fully_faithful.{u1, u2} (yoneda_embedding.{u1, u2} C) :=
-  --sorry
+theorem yoneda_embedding_fully_faithful :
+  ∀ (C : Cat.{u1+1, u2+1}),
+    @fully_faithful'.{u1+1, u2, max (u2+2) (u1+1), max u1 u2}
+      C
+      (presheaves.{u1+1, u2} C)
+      (yoneda_embedding.{u1+1, u2} C) := by
+  intro C
+  constructor
+  . simp [full]
+    intro a b
+    sorry
+    --intro a b
+    --simp [surjective]
+    --intro m
+    --simp [yoneda_embedding, precomp_hom]
+    --simp [presheaves, yoneda_embedding, ContraHom', ContraHom, funct_cat] at m
+    --have h := m.eta a (C.iden a)
+    --simp [Hom, Op] at h
+    --exists h
+    ----simp [Op]
+    --simp [Op]
+    --have h2 := m.nt_law h
+    --simp [Hom, Op, type_cat] at h2
+    --have h3 := m.nt_law (C.iden a) 
+    --sorry
+    --exists (m (C.iden b))
+    --simp [presheaves, yoneda_embedding, ContraHom', ContraHom, Hom, funct_cat] at m
+
+  . sorry -- simp [faithful]

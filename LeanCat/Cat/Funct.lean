@@ -2,7 +2,8 @@ import LeanCat.Core
 import LeanCat.Cat.Set
 
 -- The category of functors
-def funct_cat {Dom : Cat.{u1, u2}} {Cod : Cat.{u3, u4}} : Cat :=
+def funct_cat.{u1, u2, u3, u4} {Dom : Cat.{u1, u2}} {Cod : Cat.{u3, u4}}
+      : Cat.{max 1 u4 u3 u2 u1, max 1 u1 u4} :=
   { obj := Funct Dom Cod
   , mor := NT
   , comp := λ {F G H} α β =>
@@ -50,4 +51,6 @@ def funct_cat {Dom : Cat.{u1, u2}} {Cod : Cat.{u3, u4}} : Cat :=
   }
 
 -- Category of presheaves
-def presheaves (C : Cat) : Cat := @funct_cat (Op C) type_cat
+def presheaves.{u1, u2} (C : Cat.{u1, u2+1}) :
+      Cat.{max 1 (u2+1) (u2+2) u2 u1, max u1 (u2+1)} :=
+  @funct_cat.{u1, u2+1, u2+2, u2+1} (Op C) type_cat.{u2}

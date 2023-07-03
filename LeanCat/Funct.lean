@@ -10,7 +10,7 @@ def I (C : Cat) : Funct C C :=
   }
 
 -- Covariant hom functor
-def Hom {C : Cat} (c : C.obj) : Funct C type_cat :=
+def Hom {C : Cat.{u1, u2+1}} (c : C.obj) : Funct C type_cat.{u2} :=
   { map_obj := λ d => C.mor c d
   , map_mor := λ f g => C.comp f g
   , fmap_id := by
@@ -67,10 +67,20 @@ def ContraHom' {C : Cat} (c : C.obj) : Funct (Op C) type_cat := @ContraHom C c
 -- Representable functor
 def representable (F : Funct C type_cat) : Prop := ∃ (c : C.obj), nat_iso F (Hom c)
 
-def full {C : Cat.{u1, u2+1}} {D : Cat.{u3, u4+1}} (F : Funct C D) : Prop :=
+def full.{u1, u2, u3} {C : Cat.{u1, u2+1}} {D : Cat.{u3, u2+1}} (F : Funct C D) : Prop :=
+  ∀ a b, @epimorphism type_cat (C.mor a b) (D.mor (F.map_obj a) (F.map_obj b)) (λ (f : C.mor a b) => F.map_mor f)
+
+def full'.{u1, u2, u3, u4} {C : Cat.{u1, u2+1}} {D : Cat.{u3, u4+1}} (F : Funct C D) : Prop :=
   ∀ a b, surjective (λ (f : C.mor a b) => F.map_mor f)
 
-def faithful {C : Cat.{u1, u2+1}} {D : Cat.{u3, u4+1}} (F : Funct C D) : Prop :=
+def faithful.{u1, u2, u3} {C : Cat.{u1, u2+1}} {D : Cat.{u3, u2+1}} (F : Funct C D) : Prop :=
+  ∀ a b, @monomorphism type_cat (C.mor a b) (D.mor (F.map_obj a) (F.map_obj b)) (λ (f : C.mor a b) => F.map_mor f)
+
+def faithful'.{u1, u2, u3, u4} {C : Cat.{u1, u2+1}} {D : Cat.{u3, u4+1}} (F : Funct C D) : Prop :=
   ∀ a b, injective (λ (f : C.mor a b) => F.map_mor f)
 
-def fully_faithful.{u1, u2} {C : Cat.{u1, u2+1}} {D : Cat.{u3, u4+1}} (F : Funct C D) : Prop := full F ∧ faithful F
+def fully_faithful.{u1, u2, u3} {C : Cat.{u1, u2+1}} {D : Cat.{u3, u2+1}} (F : Funct C D) : Prop :=
+  full.{u1, u2, u3} F ∧ faithful.{u1, u2, u3} F
+
+def fully_faithful'.{u1, u2, u3, u4} {C : Cat.{u1, u2+1}} {D : Cat.{u3, u4+1}} (F : Funct C D) : Prop :=
+  full'.{u1, u2, u3} F ∧ faithful'.{u1, u2, u3} F

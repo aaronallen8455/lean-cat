@@ -10,20 +10,23 @@ structure Cat.{u1, u2} where
   right_id : ∀ {a b} (f : mor a b), comp f (iden a) = f
 
 -- Opposite category
-def Op (C : Cat) : Cat :=
+def Op.{u1, u2} (C : Cat.{u1, u2}) : Cat.{u1, u2} :=
   { obj := C.obj
   , mor := λ a b => C.mor b a
   , comp := λ f g => C.comp g f
   , iden := C.iden
   , comp_assoc := by
       intros
-      simp [*, C.comp_assoc]
+      simp
+      rw [C.comp_assoc]
   , left_id := by
       intros
-      simp [*, C.right_id]
+      simp
+      rw [C.right_id]
   , right_id := by
       intros
-      simp [*, C.left_id]
+      simp
+      rw [C.left_id]
   }
 
 theorem op_op : ∀ C, Op (Op C) = C := by

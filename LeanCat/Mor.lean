@@ -77,29 +77,42 @@ theorem epi_mono_factor {C : Cat} {a b : C.obj} : ∀ (m : C.mor a b) (n : C.mor
     rw [←C.comp_assoc, ←C.comp_assoc, h, C.right_id, C.right_id] at h3
     exact h3
 
-def injective {A B : type_cat.obj} (f : A → B) : Prop := ∀ (x y : A) (z : B), f x = z ∧ f y = z → x = y
+def injective {A B : type_cat.obj} (f : A → B) : Prop := ∀ (x y : A), f x = f y → x = y
 def surjective {A B : type_cat.obj} (f : A → B) : Prop := ∀ (x : B), ∃ (y : A), f y = x
 
 theorem mono_inj_post {C : Cat} {a b : C.obj} (f : C.mor a b) :
     monomorphism f ↔ (∀ c, injective (λ (g : C.mor c a) => C.comp f g)) := by
   constructor
-  . intro mono _ x y _ h
+  . intro mono _ x y h
     simp at h
-    have ⟨hl, hr⟩ := h
-    exact mono x y (hl.trans hr.symm)
+    exact mono x y h
   . intro h x n p h2
-    have h3 := h x n p (C.comp f p)
+    have h3 := h x n p
     simp at h3
     exact h3 h2
 
 theorem epi_inj_pre {C : Cat} {a b : C.obj} (f : C.mor a b) :
     epimorphism f ↔ (∀ c, injective (λ (g : C.mor b c) => C.comp g f)) := by
   constructor
-  . intro epi c x y z h
+  . intro epi c x y h
     simp at h
-    have ⟨hl, hr⟩ := h
-    exact epi x y (hl.trans hr.symm)
+    exact epi x y h
   . intro h x n p h2
-    have h3 := h x n p (C.comp n f)
+    have h3 := h x n p
     simp at h3
-    exact h3 h2.symm
+    exact h3 h2
+
+--theorem inj_mono : ∀ {A B : type_cat.obj} (f : A → B), injective f → @monomorphism type_cat A B f := by
+  --intro A B f inj
+  --simp [monomorphism]
+  --intro A' n p h
+  --simp [injective] at inj
+  --simp [type_cat] at h
+  --have h2 : ∀ x, f (n x) = f (p x) := by {
+    --intro x
+    --have ch : f (n x) = (f ∘ n) x := rfl
+    --rw [ch, h]
+    --rfl
+    --}
+  
+  

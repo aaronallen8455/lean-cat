@@ -1,7 +1,7 @@
 import LeanCat.Core
 
 -- The category of types, can be thought of as Set
-def type_cat.{u} : Cat :=
+def type_cat.{u} : Cat.{u+2, u+1} :=
   { obj := Type u
   , mor := (· → ·)
   , iden := λ a => @id a
