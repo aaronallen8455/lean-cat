@@ -18,6 +18,27 @@ def poset_cat : Cat :=
       rfl
   }
 
+def empty_cat : Cat :=
+  { obj := False
+  , mor := λ _x _y => False
+  , comp := λ {a b c} _m _n => a.elim
+  , iden := λ x => x.elim
+  , comp_assoc := by simp
+  , left_id := by simp
+  , right_id := by simp
+  }
+
+def EmptyDiagram (C : Cat) : Funct empty_cat C :=
+  { map_obj := False.elim
+  , map_mor := λ {x _} _ => x.elim
+  , fmap_id := by
+      intro a
+      exact a.elim
+  , fmap_law := by
+      intros a
+      exact a.elim
+  }
+
 def groupoid (C : Cat) : Prop := ∀ {a b : C.obj} (m : C.mor a b), isomorphism m
 
 def discrete (C : Cat) : Prop := ∀ (a b : C.obj), ∃ (_ : C.mor a b), a = b

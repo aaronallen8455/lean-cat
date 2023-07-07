@@ -64,6 +64,17 @@ def ContraHom {C : Cat} (c : C.obj) : ContraFunct C type_cat := Hom c
 
 def ContraHom' {C : Cat} (c : C.obj) : Funct (Op C) type_cat := @ContraHom C c
 
+-- Constant functor
+def Const {C : Cat} (I : Cat) (x : C.obj) : Funct I C :=
+  { map_obj := λ _ => x
+  , map_mor := λ _ => C.iden x
+  , fmap_id := by simp
+  , fmap_law := by
+      intros
+      simp
+      rw [C.left_id]
+  }
+
 -- Representable functor
 def representable (F : Funct C type_cat) : Prop := ∃ (c : C.obj), nat_iso F (Hom c)
 
@@ -75,3 +86,13 @@ def faithful.{u1, u2, u3, u4} {C : Cat.{u1, u2+1}} {D : Cat.{u3, u4+1}} (F : Fun
 
 def fully_faithful.{u1, u2, u3, u4} {C : Cat.{u1, u2+1}} {D : Cat.{u3, u4+1}} (F : Funct C D) : Prop :=
   full.{u1, u2, u3} F ∧ faithful.{u1, u2, u3} F
+
+def FDual (F : Funct C D) : Funct (Op C) (Op D) :=
+  { map_obj := F.map_obj
+  , map_mor := F.map_mor
+  , fmap_id := F.fmap_id
+  , fmap_law := by
+      intro a b c f g
+      simp [Op]
+      rw [F.fmap_law]
+  }

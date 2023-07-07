@@ -1,9 +1,9 @@
 -- Small category
 structure Cat.{u1, u2} where
   obj : Sort u1
-  mor : obj -> obj -> Sort u2
+  mor : obj → obj → Sort u2
   comp : {a b c : obj} → mor b c → mor a b → mor a c
-  iden : (a : obj) -> mor a a
+  iden : (a : obj) → mor a a
   comp_assoc : ∀ {a b c d} (f : mor c d) (g : mor b c) (h : mor a b),
               comp f (comp g h) = comp (comp f g) h
   left_id : ∀ {a b} (f : mor a b), comp (iden b) f = f

@@ -24,5 +24,13 @@ def funct_comp (F : Funct D E) (G : Funct C D) : Funct C E :=
       rw [F.fmap_law, G.fmap_law]
   }
 
+theorem funct_comp_assoc : funct_comp C (funct_comp D E) = funct_comp (funct_comp C D) E := by
+  simp [funct_comp]
+  constructor <;> rfl
+
+theorem funct_map_assoc {F : Funct E F} {G : Funct D E} {H : Funct C D} (x : C.obj)
+          : F.map_obj ((funct_comp G H).map_obj x)
+          = (funct_comp F G).map_obj (H.map_obj x) := rfl
+
 -- Contravariant functor
 def ContraFunct (Dom : Cat.{u1, u2}) (Cod : Cat.{u3, u4}) := Funct (Op Dom) Cod
