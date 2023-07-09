@@ -158,7 +158,6 @@ theorem adj_left_preserve_colim {L : Funct C D} (adj : Adjunction L R) : preserv
   simp [preserves_lims, FOp] at h
   exact h (FOp G) l
 
-theorem adj_lim_preservation {L : Funct C D} (adj : Adjunction L R) : preserves_lims R ∧ preserves_colims L := by
-  constructor
-  . exact adj_right_preserve_lim adj
-  . exact adj_left_preserve_colim adj
+theorem adj_lim_preservation {L : Funct C D} (adj : Adjunction L R)
+    : preserves_lims R ∧ preserves_colims L :=
+  ⟨adj_right_preserve_lim adj, adj_left_preserve_colim adj⟩
