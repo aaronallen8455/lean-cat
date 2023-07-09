@@ -14,7 +14,7 @@ def get_leg {C : Cat} {D : Cat} {F : Funct C D}
 structure Lim {C : Cat} {D : Cat} (F : Funct C D) extends Cone F where
   univ_prop : ∀ (l : Cone F), ∃ (m : D.mor l.lim lim), ∀ (n : D.mor l.lim lim), m = n
 
-def Colim {C : Cat} {D : Cat} (F : Funct C D) := Lim (FDual F)
+def Colim {C : Cat} {D : Cat} (F : Funct C D) := Lim (FOp F)
 
 def initial (C : Cat) := Lim (I C)
 
@@ -37,8 +37,8 @@ def reflects_lims.{u1, u2, u3, u4, u5, u6} {C : Cat.{u1, u2}} {D : Cat.{u3, u4}}
 def creates_lims.{u1,u2,u3,u4,u5,u6} {C : Cat.{u1, u2}} {D : Cat.{u3, u4}} (F : Funct C D) : Prop
   := preserves_lims.{u1,u2,u3,u4,u5,u6} F ∧ reflects_lims.{u1,u2,u3,u4,u5,6} F
 
-theorem lim_colim_duals : ∀ {C : Cat} {D : Cat} (F : Funct C D), Lim F = Colim (FDual F) := by
+theorem lim_colim_duals : ∀ {C : Cat} {D : Cat} (F : Funct C D), Lim F = Colim (FOp F) := by
   intro C D F
-  simp [Colim, FDual]
+  simp [Colim, FOp]
   conv =>
     rhs

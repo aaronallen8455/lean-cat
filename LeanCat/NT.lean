@@ -1,4 +1,5 @@
 import LeanCat.Core
+import LeanCat.Funct
 
 def id_nt (F : Funct C D) : NT F F :=
   { eta := λ a => F.map_mor (C.iden a)
@@ -31,6 +32,22 @@ def horiz_nt_comp {A B C : Cat} {F₁ G₁ : Funct A B} {F₂ G₂ : Funct B C}
          ]
       rfl
   }
+
+-- Convert a natural transformation to the opposite functors
+def op_nt {C : Cat} {D : Cat} {F G : Funct C D} (α : NT F G) : NT (FOp G) (FOp F) :=
+  { eta := by
+      simp [Op, FOp]
+      exact α.eta
+  , nt_law := by
+      simp [Op, FOp]
+      intro a b m
+      simp [Op] at a b m
+      exact (α.nt_law m).symm
+  }
+
+theorem op_nt_eq : ∀ {C : Cat} {D : Cat} {F G : Funct C D} (α : NT F G), α.eta = (op_nt α).eta := by
+  intros
+  simp [op_nt]
 
 def whisker_left (F : Funct C D) (α : NT G H) : NT (funct_comp G F) (funct_comp H F) :=
   horiz_nt_comp α (id_nt F)

@@ -87,12 +87,15 @@ def faithful.{u1, u2, u3, u4} {C : Cat.{u1, u2+1}} {D : Cat.{u3, u4+1}} (F : Fun
 def fully_faithful.{u1, u2, u3, u4} {C : Cat.{u1, u2+1}} {D : Cat.{u3, u4+1}} (F : Funct C D) : Prop :=
   full.{u1, u2, u3} F ∧ faithful.{u1, u2, u3} F
 
-def FDual (F : Funct C D) : Funct (Op C) (Op D) :=
-  { map_obj := F.map_obj
-  , map_mor := F.map_mor
-  , fmap_id := F.fmap_id
-  , fmap_law := by
+def FOp (F : Funct C D) : Funct (Op C) (Op D) :=
+  { F with 
+    fmap_law := by
       intro a b c f g
       simp [Op]
       rw [F.fmap_law]
   }
+
+theorem cancel_op_op (F : Funct C D) : (FOp (FOp F)) = F := by
+  simp [FOp]
+  conv =>
+    lhs
