@@ -18,19 +18,27 @@ def poset_cat : Cat :=
       rfl
   }
 
--- | A dependent pair that is fully parametric over universes
+-- A dependent pair that is fully parametric over universes
 inductive DepPair.{u1, u2} {ty : Sort u1} (p : ty → Sort u2) : Sort (max 1 u1 u2)
   | mk : (foc : ty) → p foc → DepPair p
 
-def slice_cat {C : Cat} (c : C.obj) : Cat :=
-  { obj := DepPair (C.mor c ·)
-  , mor := λ ⟨a, m⟩ ⟨b, n⟩ => ∃ (f : C.mor a b), C.comp f m = n
-  , comp := λ ⟨f, h1⟩ ⟨g, h2⟩ => ⟨C.comp f g, by rw [←C.comp_assoc, h2, h1]⟩
-  , iden := λ ⟨x, m⟩ => ⟨C.iden x, by rw [C.left_id]⟩
+-- Category of elements for a covariant functor
+def cat_of_elems (F : Funct C type_cat) : Cat :=
+  { obj := DepPair F.map_obj
+  , mor := λ ⟨a, x⟩ ⟨b, y⟩ => ∃ (f : C.mor a b), F.map_mor f x = y
+  , comp := λ ⟨f, h1⟩ ⟨g, h2⟩ =>
+      ⟨C.comp f g
+      , by rw [←F.fmap_law]
+           simp [type_cat]
+           rw [h2, h1]
+      ⟩
+  , iden := λ ⟨c, x⟩ => ⟨C.iden c, by rw [F.fmap_id]; simp [type_cat]⟩
   , comp_assoc := by simp
   , left_id := by simp
   , right_id := by simp
   }
+
+def slice_cat {C : Cat} (c : C.obj) : Cat := cat_of_elems (Hom c)
 
 def empty_cat : Cat :=
   { obj := False
