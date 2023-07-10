@@ -22,7 +22,32 @@ def poset_cat : Cat :=
 inductive DepPair.{u1, u2} {ty : Sort u1} (p : ty → Sort u2) : Sort (max 1 u1 u2)
   | mk : (foc : ty) → p foc → DepPair p
 
+-- The comma category
+def comma_cat (F : Funct D C) (G : Funct E C) : Cat :=
+  { obj := DepPair (λ (d, e) => C.mor (F.map_obj d) (G.map_obj e))
+  , mor := λ ⟨(d1, e1), f⟩ ⟨(d2, e2), g⟩ =>
+            ∃ (p : (D.mor d1 d2) × (E.mor e1 e2)),
+              C.comp (G.map_mor p.2) f = C.comp g (F.map_mor p.1)
+  , comp := λ ⟨(f, g), h1⟩ ⟨(h, i), h2⟩ =>
+      ⟨(D.comp f h, E.comp g i)
+      , by
+        simp at h2 h1
+        simp
+        rw [←G.fmap_law, ←C.comp_assoc, h2, C.comp_assoc, h1, ←C.comp_assoc, F.fmap_law]
+      ⟩
+  , iden := λ ⟨(d, e), m⟩ =>
+      ⟨(D.iden d, E.iden e)
+      , by simp
+           rw [G.fmap_id, F.fmap_id, C.left_id, C.right_id]
+      ⟩
+  , left_id := by simp
+  , right_id := by simp
+  , comp_assoc := by simp
+  }
+
 -- Category of elements for a covariant functor
+-- objects are a pair of an object c ∈ C and an element of F c
+-- morphisms are a morphism f : a → b in C such that F f (x ∈ F a) = y ∈ F b
 def cat_of_elems (F : Funct C type_cat) : Cat :=
   { obj := DepPair F.map_obj
   , mor := λ ⟨a, x⟩ ⟨b, y⟩ => ∃ (f : C.mor a b), F.map_mor f x = y
@@ -45,6 +70,16 @@ def empty_cat : Cat :=
   , mor := λ _x _y => False
   , comp := λ {a b c} _m _n => a.elim
   , iden := λ x => x.elim
+  , comp_assoc := by simp
+  , left_id := by simp
+  , right_id := by simp
+  }
+
+def unit_cat : Cat :=
+  { obj := Unit
+  , mor := λ () () => Unit
+  , comp := λ () () => ()
+  , iden := λ () => ()
   , comp_assoc := by simp
   , left_id := by simp
   , right_id := by simp

@@ -29,6 +29,9 @@ def Op.{u1, u2} (C : Cat.{u1, u2}) : Cat.{u1, u2} :=
       rw [C.left_id]
   }
 
+def dom {C : Cat} {a b : C.obj} (_ : C.mor a b) : C.obj := a
+def cod {C : Cat} {a b : C.obj} (_ : C.mor a b) : C.obj := b
+
 theorem op_op : ∀ C, Op (Op C) = C := by
   intro C
   rfl
