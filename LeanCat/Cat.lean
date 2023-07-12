@@ -45,7 +45,7 @@ def comma_cat (F : Funct D C) (G : Funct E C) : Cat :=
   , comp_assoc := by simp
   }
 
--- Category of elements for a covariant functor
+-- Category of elements for a covariant set valued functor
 -- objects are a pair of an object c ∈ C and an element of F c
 -- morphisms are a morphism f : a → b in C such that F f (x ∈ F a) = y ∈ F b
 def cat_of_elems (F : Funct C type_cat) : Cat :=
