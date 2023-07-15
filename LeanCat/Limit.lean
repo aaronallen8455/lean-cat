@@ -2,6 +2,7 @@ import LeanCat.Core
 import LeanCat.Funct
 import LeanCat.Cat
 import LeanCat.Yoneda
+import LeanCat.NT
 
 -- TODO define in terms of Kan extensions instead?
 
@@ -39,6 +40,10 @@ def reflects_lims.{u1, u2, u3, u4, u5, u6} {C : Cat.{u1, u2}} {D : Cat.{u3, u4}}
   ∀ {J : Cat.{u5, u6}} (G : Funct J C) (c : Cone G) (l : Lim (funct_comp F G)),
     l.lim = F.map_obj c.lim → ∃ (lg : Lim G), lg.toCone = c
 
+def reflects_colims.{u1,u2,u3,u4,u5,u6} {C : Cat.{u1,u2}} {D : Cat.{u3,u4}} (F : Funct C D) : Prop :=
+  ∀ {J : Cat.{u5,u6}} (G : Funct J C) (c : Cone $ FOp G) (l : Colim (funct_comp F G)),
+    l.lim = F.map_obj c.lim → ∃ (lg : Colim G), lg.toCone = c
+
 def creates_lims.{u1,u2,u3,u4,u5,u6} {C : Cat.{u1, u2}} {D : Cat.{u3, u4}} (F : Funct C D) : Prop
   := preserves_lims.{u1,u2,u3,u4,u5,u6} F ∧ reflects_lims.{u1,u2,u3,u4,u5,6} F
 
@@ -49,13 +54,13 @@ theorem lim_colim_duals : ∀ {C : Cat} {D : Cat} (F : Funct C D), Lim F = Colim
     rhs
 
 -- Riehl 2.4.8
-theorem univ_elems : ∀ (F : Funct C type_cat),
+theorem univ_elems : ∀ {C : Cat} (F : Funct C type_cat),
     representable F ↔ has_initial_obj (cat_of_elems F) := by
-  intro F
+  intro C F
   constructor
   . intro ⟨c, ⟨α, β, h⟩⟩
     simp [funct_cat] at h
-    let clim := DepPair.mk c (β.eta c (C.iden c))
+    let clim := Sigma.mk c (β.eta c (C.iden c))
     have term : initial (cat_of_elems F) :=
       { lim := clim
       , legs :=
@@ -83,28 +88,103 @@ theorem univ_elems : ∀ (F : Funct C type_cat),
       , univ_prop := by
           simp
           intro l
+          simp [cat_of_elems, I, *] at l
           exists l.legs.eta clim
       }
     exists term
   . intro ⟨init, _⟩
-    simp [initial] at init
+    simp [initial, I, cat_of_elems] at init
     simp [representable]
-    let ⟨c, fc⟩ := init.lim
-    exists c
+    exists init.lim.1
     simp [nat_iso]
-    have α : NT F (Hom c) :=
+    have α : NT F (Hom init.lim.1) :=
       { eta := by
           simp [Hom]
           intro a
           intro fa
           let h := init.legs.eta ⟨a, fa⟩
           simp [Const, I, cat_of_elems] at h
-          --let y := (yoneda_lemma C).Ψ F c fc
-          --let y2 := (yoneda_lemma C)
-          
-      , nt_law := sorry
+          exact Classical.choose h
+      , nt_law := by
+          intro a b mor
+          simp [*, type_cat, Classical.choose, Classical.indefiniteDescription, Hom]
+          sorry
       }
     exists α
     constructor
+    . constructor
+      . sorry
+      . sorry
     . sorry
-    . sorry
+
+theorem fully_faithful_reflects : ∀ (F : Funct C D),
+    fully_faithful F → reflects_lims F ∧ reflects_colims F := by
+  intro F
+  intro ⟨ful, fai⟩
+  simp [full, surjective] at ful
+  simp [faithful, injective] at fai
+  constructor
+  . simp [reflects_lims]
+    intro J G coneG l h
+    let limG : Lim G :=
+          { coneG with
+            univ_prop := by
+              intro oc
+              have ocLegs := whisker_right oc.legs F
+              have hhh : funct_comp F (Const J oc.lim) = Const J (F.map_obj oc.lim)
+                    := by
+                       simp [Const, funct_comp]
+                       constructor
+                       . rfl
+                       . rw [←F.fmap_id]
+                         rfl
+              rw [hhh] at ocLegs
+              let oc' : Cone (funct_comp F G) :=
+                    { lim := F.map_obj oc.lim
+                    , legs := ocLegs
+                    }
+              have x := l.univ_prop oc'
+              rw [h] at x
+              let ⟨m', hh⟩ := x
+              have m'' := ful oc.lim coneG.lim m'
+              simp at m''
+              exact m''.elim (λ m h' => by
+                exists m
+                intro n
+                have hh' := h'.trans $ hh (F.map_mor n)
+                exact fai oc.lim coneG.lim m n hh'
+              )
+          }
+    exists limG
+  . simp [reflects_colims]
+    intro J G coneG l h
+    let limG : Colim G :=
+          { coneG with
+            univ_prop := by
+              intro oc
+              have ocLegs := whisker_right oc.legs (FOp F)
+              have hhh : funct_comp (FOp F) (Const (Op J) oc.lim) = Const (Op J) ((FOp F).map_obj oc.lim)
+                    := by
+                       simp [Const, funct_comp]
+                       constructor
+                       . rfl
+                       . rw [←(FOp F).fmap_id]
+                         rfl
+              rw [hhh] at ocLegs
+
+              let oc' : Cone (funct_comp (FOp F) (FOp G)) :=
+                    { lim := F.map_obj oc.lim
+                    , legs := ocLegs
+                    }
+              have x := l.univ_prop oc'
+              rw [h] at x
+              let ⟨m', hh⟩ := x
+              have m'' := ful coneG.lim oc.lim m'
+              exact m''.elim (λ m h' => by
+                exists m
+                intro n
+                have hh' := h'.trans $ hh (F.map_mor n)
+                exact fai coneG.lim oc.lim m n hh'
+              )
+          }
+    exists limG

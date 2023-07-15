@@ -135,3 +135,6 @@ theorem yoneda_embedding_fully_faithful :
 theorem yoneda_embed_sub_cat (C : Cat.{u1, u1+1}) : full_sub_cat C (presheaves C) := by
   exists yoneda_embedding C
   exact yoneda_embedding_fully_faithful C
+
+def cat_of_elems' (F : Funct C type_cat) : Cat :=
+      comma_cat' (yoneda_embedding (Op C)) (Const (presheaves (Op C)) F)
