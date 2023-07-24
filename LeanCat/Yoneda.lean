@@ -138,3 +138,20 @@ theorem yoneda_embed_sub_cat (C : Cat.{u1, u1+1}) : full_sub_cat C (presheaves C
 
 def cat_of_elems' (F : Funct C type_cat) : Cat :=
       comma_cat' (yoneda_embedding (Op C)) (Const (presheaves (Op C)) F)
+
+def slice_cat' {C : Cat} (c : C.obj) : Cat := cat_of_elems' (Hom c)
+
+def forget_slice {C : Cat} {c : C.obj} : Funct (slice_cat' c) (Op C) :=
+  { map_obj := λ o => by
+      simp [cat_of_elems', slice_cat', comma_cat'] at o
+      exact o.left
+  , map_mor := λ m => by
+      simp
+      exact m.dm
+  , fmap_id := by
+      intro a
+      simp [*, slice_cat', cat_of_elems', comma_cat']
+  , fmap_law := by
+      intro a b c f g
+      simp [*, slice_cat', cat_of_elems', comma_cat']
+  }

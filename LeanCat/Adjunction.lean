@@ -161,3 +161,92 @@ theorem adj_left_preserve_colim {L : Funct C D} (adj : Adjunction L R) : preserv
 theorem adj_lim_preservation {L : Funct C D} (adj : Adjunction L R)
     : preserves_lims R ∧ preserves_colims L :=
   ⟨adj_right_preserve_lim adj, adj_left_preserve_colim adj⟩
+
+-- Given two abutting adjunctions, there is a cannonicle adjunction of the endofunctors
+-- resulting from these functor compositions.
+-- Riehl exercise 4.1.iii
+theorem adj_triple_endo : ∀ (U : Funct C D) (L R : Funct D C),
+    Adjunction L U → Adjunction U R → Adjunction (funct_comp L U) (funct_comp R U) := by
+  intro U L R adjLU adjUR
+  exact { unit := by
+            have h1 := whisker_right (whisker_left U adjLU.unit) R
+            have h2 := funct_cat.comp h1 adjUR.unit
+            exact h2
+        , counit := by
+            have h1 := whisker_right (whisker_left U adjUR.counit) L
+            have h2 := funct_cat.comp adjLU.counit h1
+            exact h2
+        , tri_L := by
+            have h2 := adjUR.tri_L
+            simp [id_nt, funct_cat, funct_comp, whisker_left, whisker_right, horiz_nt_comp, I] at h2
+            conv at h2 =>
+              rhs
+              intro x
+              rw [U.fmap_id, D.left_id, D.right_id]
+            have h3 := adjLU.tri_L
+            simp [id_nt, funct_cat, funct_comp, whisker_left, whisker_right, horiz_nt_comp, I] at h3
+            conv at h3 =>
+              rhs
+              intro x
+              rw [L.fmap_id, C.left_id, C.right_id]
+            have h4 := adjLU.tri_R
+
+            simp [*, id_nt, funct_cat, funct_comp, whisker_left, whisker_right, horiz_nt_comp, I]
+            have lem {a b} (m : D.mor a b) : U.map_mor (R.map_mor m) = (funct_comp U R).map_mor m := by rfl
+            conv =>
+              rhs
+              intro x
+              rw [U.fmap_id, L.fmap_id, C.left_id, R.fmap_id, C.right_id, C.right_id]
+              rw [←congrFun h2, U.fmap_id, D.left_id, ←congrFun h2, U.fmap_id, L.fmap_id, U.fmap_id, D.left_id]
+              rw [←congrFun h3, L.fmap_id, C.right_id]
+              rw [←C.comp_assoc, L.fmap_law]
+              rw [←U.fmap_law, D.comp_assoc, lem, adjUR.counit.nt_law]
+              simp [I]
+              rw [←D.comp_assoc, ←congrFun h2, U.fmap_id, D.right_id]
+              rw [←congrFun h3, ←U.fmap_id]
+        , tri_R := by
+            have h2 := adjUR.tri_R
+            simp [id_nt, funct_cat, funct_comp, whisker_left, whisker_right, horiz_nt_comp, I] at h2
+            conv at h2 =>
+              rhs
+              intro x
+              rw [R.fmap_id, C.right_id, R.fmap_id, U.fmap_id, R.fmap_id, C.left_id]
+            have h3 := adjLU.tri_R
+            simp [id_nt, funct_cat, funct_comp, whisker_left, whisker_right, horiz_nt_comp, I] at h3
+            conv at h3 =>
+              rhs
+              intro x
+              rw [U.fmap_id, D.right_id, U.fmap_id, L.fmap_id, U.fmap_id, D.left_id]
+
+            simp [*, id_nt, funct_cat, funct_comp, whisker_left, whisker_right, horiz_nt_comp, I]
+            have lem {a b} (m : D.mor a b) : U.map_mor (L.map_mor m) = (funct_comp U L).map_mor m := by rfl
+            conv =>
+              rhs
+              intro x
+              rw [L.fmap_id, C.right_id, U.fmap_id, R.fmap_id, C.right_id, U.fmap_id, R.fmap_id
+                 ,U.fmap_id, L.fmap_id, U.fmap_id, R.fmap_id, C.left_id]
+              rw [←congrFun h2, R.fmap_id, C.right_id, ←congrFun h3, U.fmap_id, D.left_id
+                 ,←congrFun h3, U.fmap_id, L.fmap_id, U.fmap_id, D.left_id]
+              rw [C.comp_assoc, R.fmap_law, ←U.fmap_law]
+              rw [←D.comp_assoc, lem, ←adjLU.unit.nt_law]
+              simp [I]
+              rw [D.comp_assoc, ←congrFun h3, U.fmap_id, D.left_id, ←congrFun h2]
+            conv =>
+              lhs
+              intro a
+              rw [U.fmap_id]
+        }
+
+  --exact { unit := { eta := λ a => by
+                      --simp [I]
+                      --have one := L.map_mor $ adjLU.unit.eta (U.map_obj a)
+                      --simp [I, funct_comp] at one
+                      --have two := adjUR.unit.eta a
+                      --simp [I] at two
+                      --have three := L.map_mor $ U.map_mor $ adjLU.counit.eta a
+                      --simp [I, funct_comp] at three
+                      --have four := C.comp three one
+
+                      
+                  --}
+        --}

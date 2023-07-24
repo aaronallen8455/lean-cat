@@ -119,6 +119,15 @@ def cat_of_elems (F : Funct C type_cat) : Cat :=
 
 def slice_cat {C : Cat} (c : C.obj) : Cat := cat_of_elems (Hom c)
 
+--def forget_slice.{u1,u2} {C : Cat.{u1+1, u2+1}} {c : C.obj} : Funct (slice_cat c) C :=
+  --{ map_obj := Sigma.fst
+  --, map_mor := Classical.choose
+  --, fmap_id := by
+      --intro a
+      --simp
+      --simp [Classical.choose, Classical.indefiniteDescription]
+  --}
+
 def empty_cat : Cat :=
   { obj := False
   , mor := λ _x _y => False

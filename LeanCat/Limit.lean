@@ -47,6 +47,11 @@ def reflects_colims.{u1,u2,u3,u4,u5,u6} {C : Cat.{u1,u2}} {D : Cat.{u3,u4}} (F :
 def creates_lims.{u1,u2,u3,u4,u5,u6} {C : Cat.{u1, u2}} {D : Cat.{u3, u4}} (F : Funct C D) : Prop
   := preserves_lims.{u1,u2,u3,u4,u5,u6} F ∧ reflects_lims.{u1,u2,u3,u4,u5,6} F
 
+def strictly_creates_lims.{u1,u2,u3,u4,u5,u6} {C : Cat.{u1,u2}} {D : Cat.{u3,u4}} (F : Funct C D) : Prop
+  := ∀ {J : Cat.{u5,u6}} (G : Funct J C) (l : Lim (funct_comp F G)),
+      ∃ c : Lim G, l.lim = F.map_obj c.lim
+                 ∧ (∀ oc : Cone G, l.lim = F.map_obj oc.lim → c.toCone = oc)
+
 theorem lim_colim_duals : ∀ {C : Cat} {D : Cat} (F : Funct C D), Lim F = Colim (FOp F) := by
   intro C D F
   simp [Colim, FOp]
@@ -54,6 +59,8 @@ theorem lim_colim_duals : ∀ {C : Cat} {D : Cat} (F : Funct C D), Lim F = Colim
     rhs
 
 -- Riehl 2.4.8
+-- A covariant set valued functor is representable iff its category of elements
+-- has an initial object.
 theorem univ_elems : ∀ {C : Cat} (F : Funct C type_cat),
     representable F ↔ has_initial_obj (cat_of_elems F) := by
   intro C F
@@ -117,6 +124,9 @@ theorem univ_elems : ∀ {C : Cat} (F : Funct C type_cat),
       . sorry
     . sorry
 
+-- Riehl 3.3.5
+-- Any fully faithful functor reflects all limits and colimits that are in
+-- its codomain.
 theorem fully_faithful_reflects : ∀ (F : Funct C D),
     fully_faithful F → reflects_lims F ∧ reflects_colims F := by
   intro F
