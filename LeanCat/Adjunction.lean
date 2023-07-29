@@ -189,8 +189,6 @@ theorem adj_triple_endo : ∀ (U : Funct C D) (L R : Funct D C),
               rhs
               intro x
               rw [L.fmap_id, C.left_id, C.right_id]
-            have h4 := adjLU.tri_R
-
             simp [*, id_nt, funct_cat, funct_comp, whisker_left, whisker_right, horiz_nt_comp, I]
             have lem {a b} (m : D.mor a b) : U.map_mor (R.map_mor m) = (funct_comp U R).map_mor m := by rfl
             conv =>
@@ -237,16 +235,118 @@ theorem adj_triple_endo : ∀ (U : Funct C D) (L R : Funct D C),
               rw [U.fmap_id]
         }
 
-  --exact { unit := { eta := λ a => by
-                      --simp [I]
-                      --have one := L.map_mor $ adjLU.unit.eta (U.map_obj a)
-                      --simp [I, funct_comp] at one
-                      --have two := adjUR.unit.eta a
-                      --simp [I] at two
-                      --have three := L.map_mor $ U.map_mor $ adjLU.counit.eta a
-                      --simp [I, funct_comp] at three
-                      --have four := C.comp three one
+-- | Alternate definition using equality of hom sets instead of natural transformations
+structure Adjunction' (L : Funct C D) (R : Funct D C) where
+  m : ∀ c d, (C.mor c (R.map_obj d)) → (D.mor (L.map_obj c) d)
+  n : ∀ c d, (D.mor (L.map_obj c) d) → (C.mor c (R.map_obj d))
+  iso : ∀ c d, n c d ∘ m c d = id ∧ m c d ∘ n c d = id
+  -- the collection of isomorphisms is natural in C and D:
+  nat_C : ∀ {c c'} {d} (f : D.mor (L.map_obj c) d) (h : C.mor c' c),
+    C.comp (n c d f) h = n c' d (D.comp f (L.map_mor h))
+  nat_D : ∀ {c} {d d'} (f : D.mor (L.map_obj c) d) (k : D.mor d d'),
+    C.comp (R.map_mor k) (n c d f) = n c d' (D.comp k f)
 
-                      
-                  --}
-        --}
+def conv_adj_1 (L : Funct C D) (R : Funct D C) (adj : Adjunction L R) : Adjunction' L R :=
+  { m := λ c d f => D.comp (adj.counit.eta d) (L.map_mor f)
+  , n := λ c d f => C.comp (R.map_mor f) (adj.unit.eta c)
+  , iso := by
+      intro c d
+      simp
+      constructor
+      . conv =>
+          lhs
+          intro f
+          simp
+        have h := congrArg (λ α => α.eta d) adj.tri_R
+        simp [id_nt, funct_cat, whisker_right, whisker_left, horiz_nt_comp] at h
+        rw [R.fmap_id, R.fmap_id] at h
+        conv at h =>
+          rhs
+          rw [(funct_comp R L).fmap_id, C.left_id] 
+          arg 2
+          rw [C.right_id (R.map_mor (adj.counit.eta d))]
+        conv =>
+          lhs
+          intro f
+          rw [←R.fmap_law, ←C.comp_assoc, funct_comp_map, ←adj.unit.nt_law]
+          simp [I]
+          rw [C.comp_assoc, ←h, C.left_id]
+
+      . conv =>
+          lhs
+          intro f
+          simp
+        have h := congrArg (λ α => α.eta c) adj.tri_L
+        simp [id_nt, funct_cat, whisker_right, whisker_left, horiz_nt_comp, I] at h
+        rw [L.fmap_id, D.left_id] at h
+        let hh := D.right_id (L.map_mor (adj.unit.eta c))
+        simp [I] at hh
+        conv at h =>
+          rhs
+          arg 3
+          rw [hh]
+        conv =>
+          lhs
+          intro f
+          rw [←L.fmap_law, D.comp_assoc, funct_comp_map, adj.counit.nt_law]
+          simp [I]
+          rw [←D.comp_assoc, ←h, D.right_id]
+  , nat_D := by
+      intro c d d' f k
+      simp
+      rw [C.comp_assoc, R.fmap_law]
+  , nat_C := by
+      intro c c' d f h
+      simp
+      rw [←R.fmap_law]
+      conv =>
+        rhs
+        rw [←C.comp_assoc, funct_comp_map, ←adj.unit.nt_law]
+        simp [I]
+      rw [C.comp_assoc]
+  }
+
+theorem transpose_sqr :
+  ∀ {L : Funct C D} {R : Funct D C}
+    (adj : Adjunction' L R)
+    (c c' : C.obj)
+    (d d' : D.obj)
+    (h : C.mor c c')
+    (k : D.mor d d')
+    (f : D.mor (L.map_obj c) d)
+    (g : D.mor (L.map_obj c') d'),
+      D.comp k f = D.comp g (L.map_mor h)
+    ↔ C.comp (R.map_mor k) (adj.n c d f) = C.comp (adj.n c' d' g) h := by
+  intro L R adj c c' d d' h k f g
+  constructor
+  . intro hyp
+    rw [adj.nat_D, hyp, ←adj.nat_C]
+  . intro hyp
+    rw [adj.nat_D, adj.nat_C] at hyp
+    have hyp' := congrArg (λ f => adj.m c d' f) hyp
+    simp at hyp'
+    have blah : ∀ z, adj.m c d' (adj.n c d' z) = (adj.m c d' ∘ adj.n c d') z := by {intros; rfl}
+    rw [blah, (adj.iso c d').2] at hyp'
+    simp at hyp'
+    rw [hyp', blah, (adj.iso c d').2]
+    simp
+
+def conv_adj_2 (L : Funct C D) (R : Funct D C) (adj : Adjunction' L R) : Adjunction L R :=
+  { unit :=
+    { eta := λ c => adj.n c (L.map_obj c) (D.iden (L.map_obj c))
+    , nt_law := by
+        intro a b mor
+        simp [*, I]
+        have tsqr := (transpose_sqr adj a b (L.map_obj a) (L.map_obj b)
+                        mor (L.map_mor mor)
+                        (D.iden (L.map_obj a)) (D.iden (L.map_obj b))
+                     ).1
+        apply Eq.symm
+        simp [funct_comp]
+        apply tsqr
+        rw [D.left_id, D.right_id]
+    }
+  , counit := sorry
+  , tri_L := sorry
+  , tri_R := sorry
+  }

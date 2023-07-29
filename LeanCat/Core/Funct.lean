@@ -24,6 +24,10 @@ def funct_comp (F : Funct D E) (G : Funct C D) : Funct C E :=
       rw [F.fmap_law, G.fmap_law]
   }
 
+theorem funct_comp_map : ∀ (F : Funct D E) (G : Funct C D) (f : C.mor a b), F.map_mor (G.map_mor f) = (funct_comp F G).map_mor f := by
+  intros
+  rfl
+
 theorem funct_comp_assoc : funct_comp C (funct_comp D E) = funct_comp (funct_comp C D) E := by
   simp [funct_comp]
   constructor <;> rfl

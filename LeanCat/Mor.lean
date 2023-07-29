@@ -79,6 +79,7 @@ theorem epi_mono_factor {C : Cat} {a b : C.obj} : ∀ (m : C.mor a b) (n : C.mor
 
 def injective {A B : type_cat.obj} (f : A → B) : Prop := ∀ (x y : A), f x = f y → x = y
 def surjective {A B : type_cat.obj} (f : A → B) : Prop := ∀ (x : B), ∃ (y : A), f y = x
+def bijective {A B : type_cat.obj} (f : A → B) : Prop := injective f ∧ surjective f
 
 theorem mono_inj_post {C : Cat} {a b : C.obj} (f : C.mor a b) :
     monomorphism f ↔ (∀ c, injective (λ (g : C.mor c a) => C.comp f g)) := by
