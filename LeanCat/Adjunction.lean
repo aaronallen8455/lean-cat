@@ -235,7 +235,7 @@ theorem adj_triple_endo : ∀ (U : Funct C D) (L R : Funct D C),
               rw [U.fmap_id]
         }
 
--- | Alternate definition using equality of hom sets instead of natural transformations
+-- Alternate definition using equality of hom sets instead of natural transformations
 structure Adjunction' (L : Funct C D) (R : Funct D C) where
   m : ∀ c d, (C.mor c (R.map_obj d)) → (D.mor (L.map_obj c) d)
   n : ∀ c d, (D.mor (L.map_obj c) d) → (C.mor c (R.map_obj d))
@@ -246,6 +246,7 @@ structure Adjunction' (L : Funct C D) (R : Funct D C) where
   nat_D : ∀ {c} {d d'} (f : D.mor (L.map_obj c) d) (k : D.mor d d'),
     C.comp (R.map_mor k) (n c d f) = n c d' (D.comp k f)
 
+-- Show that the two definitions are equivalent
 def conv_adj_1 (L : Funct C D) (R : Funct D C) (adj : Adjunction L R) : Adjunction' L R :=
   { m := λ c d f => D.comp (adj.counit.eta d) (L.map_mor f)
   , n := λ c d f => C.comp (R.map_mor f) (adj.unit.eta c)
@@ -331,6 +332,13 @@ theorem transpose_sqr :
     rw [hyp', blah, (adj.iso c d').2]
     simp
 
+def extract_lam : ∀ {l r : α → β}, (∀ x, l x = r x) → (fun x => l x) = (fun x => r x) := by
+  intro l r h
+  conv =>
+    lhs
+    intro x
+    rw [h x]
+
 def conv_adj_2 (L : Funct C D) (R : Funct D C) (adj : Adjunction' L R) : Adjunction L R :=
   { unit :=
     { eta := λ c => adj.n c (L.map_obj c) (D.iden (L.map_obj c))
@@ -346,7 +354,105 @@ def conv_adj_2 (L : Funct C D) (R : Funct D C) (adj : Adjunction' L R) : Adjunct
         apply tsqr
         rw [D.left_id, D.right_id]
     }
-  , counit := sorry
-  , tri_L := sorry
-  , tri_R := sorry
+  , counit :=
+    { eta := λ d => adj.m (R.map_obj d) d (C.iden (R.map_obj d))
+    , nt_law := by
+        intro a b mor
+        simp [*, I]
+        have tsqr := (transpose_sqr adj (R.map_obj a) (R.map_obj b) a b
+                        (R.map_mor mor) mor
+                        (adj.m (R.map_obj a) a (C.iden (R.map_obj a)))
+                        (adj.m (R.map_obj b) b (C.iden (R.map_obj b)))
+                     ).2
+        have blah : ∀ a b z, adj.n a b (adj.m a b z) = (adj.n a b ∘ adj.m a b) z := by {intros; rfl}
+        rw [blah, blah, (adj.iso (R.map_obj a) a).1, (adj.iso (R.map_obj b) b).1] at tsqr
+        simp at tsqr
+        rw [C.left_id, C.right_id] at tsqr
+        simp [funct_comp]
+        apply Eq.symm
+        apply tsqr
+        rfl
+    }
+  , tri_L := by
+      simp [id_nt, funct_cat, whisker_left, horiz_nt_comp, whisker_right, I]
+      conv =>
+        rhs
+        intro x
+        rw [L.fmap_id, D.left_id, D.right_id (Funct.map_mor L (Adjunction'.n adj x (Funct.map_obj L x) (Cat.iden D (Funct.map_obj L x))))]
+      have tsqr := λ x =>
+                   (transpose_sqr adj x _ _ _
+                      (Adjunction'.n adj x (Funct.map_obj L x) (Cat.iden D (Funct.map_obj L x)))
+                      (D.iden (L.map_obj x))
+                      (D.iden (L.map_obj x))
+                      (Adjunction'.m adj (Funct.map_obj R (Funct.map_obj L x)) (Funct.map_obj L x)
+                        (Cat.iden C (Funct.map_obj R (Funct.map_obj L x))))
+                   ).2
+      conv at tsqr =>
+        intro x
+        rw [D.left_id]
+      
+      have omg : (∀ x,
+                    Funct.map_mor L (Cat.iden C x) = 
+                    Cat.comp D
+                      (Adjunction'.m adj (Funct.map_obj R (Funct.map_obj L x)) (Funct.map_obj L x)
+                        (Cat.iden C (Funct.map_obj R (Funct.map_obj L x))))
+                      (Funct.map_mor L (Adjunction'.n adj x (Funct.map_obj L x) (Cat.iden D (Funct.map_obj L x))))
+                 ) →
+                 (fun a => Funct.map_mor L (Cat.iden C a)) = fun x =>
+                    Cat.comp D
+                      (Adjunction'.m adj (Funct.map_obj R (Funct.map_obj L x)) (Funct.map_obj L x)
+                        (Cat.iden C (Funct.map_obj R (Funct.map_obj L x))))
+                      (Funct.map_mor L (Adjunction'.n adj x (Funct.map_obj L x) (Cat.iden D (Funct.map_obj L x))))
+                := by
+              intro h
+              conv =>
+                lhs
+                intro x
+                rw [h x]
+      apply omg
+      intro x
+      rw [L.fmap_id]
+      apply tsqr x
+      have blah : ∀ a b z, adj.n a b (adj.m a b z) = (adj.n a b ∘ adj.m a b) z := by {intros; rfl}
+      rw [blah, (adj.iso (R.map_obj (L.map_obj x)) (L.map_obj x)).1]
+      simp
+      rw [C.left_id, R.fmap_id, C.left_id]
+  , tri_R := by
+      simp [id_nt, funct_cat, whisker_left, horiz_nt_comp, whisker_right, I, funct_comp]
+      conv =>
+        rhs
+        intro x
+        rw [R.fmap_id, C.right_id, R.fmap_id, L.fmap_id, R.fmap_id, C.left_id]
+      have omg : (∀ x,
+                    Funct.map_mor R (Cat.iden D x) =
+                      Cat.comp C (Funct.map_mor R (Adjunction'.m adj (Funct.map_obj R x) x (Cat.iden C (Funct.map_obj R x))))
+                        (Adjunction'.n adj (Funct.map_obj R x) (Funct.map_obj L (Funct.map_obj R x))
+                          (Cat.iden D (Funct.map_obj L (Funct.map_obj R x))))
+                 ) →
+                 (fun a => Funct.map_mor R (Cat.iden D a)) = fun x =>
+                    Cat.comp C (Funct.map_mor R (Adjunction'.m adj (Funct.map_obj R x) x (Cat.iden C (Funct.map_obj R x))))
+                      (Adjunction'.n adj (Funct.map_obj R x) (Funct.map_obj L (Funct.map_obj R x))
+                        (Cat.iden D (Funct.map_obj L (Funct.map_obj R x)))
+                 ) := by
+            intro h
+            conv =>
+              lhs
+              intro x
+              rw [h x]
+      apply omg
+      intro x
+      have tsqr := (transpose_sqr adj _ _ _ _
+                     (Funct.map_mor R (Cat.iden D x))
+                     (Adjunction'.m adj (Funct.map_obj R x) x (Cat.iden C (Funct.map_obj R x)))
+                     (Cat.iden D (Funct.map_obj L (Funct.map_obj R x)))
+                     (adj.m _ _ (R.map_mor (D.iden x)))
+                   ).1
+      have blah : ∀ a b z, adj.n a b (adj.m a b z) = (adj.n a b ∘ adj.m a b) z := by {intros; rfl}
+      rw [blah, (adj.iso (R.map_obj x) x).1] at tsqr
+      simp at tsqr
+      rw [R.fmap_id, C.left_id] at tsqr
+      rw [R.fmap_id]
+      apply Eq.symm
+      apply tsqr
+      rw [D.right_id, L.fmap_id, D.right_id]
   }
