@@ -183,3 +183,24 @@ theorem skeletal_poset : skeletal poset_cat := by
   . assumption
   . have ⟨n, _⟩ := iso
     exact Nat.le_antisymm m n
+
+-- Cartesian product of categories
+def prod (A : Cat) (B : Cat) : Cat :=
+  { obj := A.obj × B.obj
+  , mor := λ x y => A.mor x.1 y.1 × B.mor x.2 y.2
+  , comp := λ m n => (A.comp m.1 n.1, B.comp m.2 n.2)
+  , iden := λ x => (A.iden x.1, B.iden x.2)
+  , comp_assoc := by
+      simp
+      intros
+      rw [A.comp_assoc, B.comp_assoc]
+      constructor <;> rfl
+  , left_id := by
+      intros
+      simp
+      rw [A.left_id, B.left_id]
+  , right_id := by
+      intros
+      simp
+      rw [A.right_id, B.right_id]
+  }

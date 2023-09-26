@@ -2,6 +2,12 @@ import LeanCat.Funct
 import LeanCat.Cat.Funct
 import LeanCat.Cat
 
+-- 'F' will be Hom(F, _)
+-- 'c' will be F'
+
+-- NT I (R L)
+  --m : ∀ c, NT (funct_comp (Hom c) R) (Hom (L.map_obj c))
+  --n : ∀ d, NT (funct_comp (ContraHom d) (FOp L)) (ContraHom (R.map_obj d))
 structure Yoneda (C : Cat) where
   Φ : ∀ (F : Funct C type_cat) c, NT (Hom c) F → F.map_obj c
   Ψ : ∀ (F : Funct C type_cat) c, F.map_obj c → NT (Hom c) F

@@ -20,6 +20,9 @@ def automorphism {C : Cat} {a b : C.obj} (m : C.mor a b) : Prop := isomorphism m
 def nat_iso {C : Cat.{u1 + 1, u1}} {D : Cat.{u2 + 1, u2}} (F : Funct C D) (G : Funct C D) : Prop :=
   ∃ (α : NT F G), @isomorphism funct_cat F G α
 
+-- A natural transformation is a natural isomorphism if all components are isomorphisms
+def nat_iso' (n : NT F G) : Prop := ∀ c, isomorphism (n.eta c)
+
 theorem mono_mono {C : Cat} {a b c : C.obj} : ∀ (m : C.mor a b) (n : C.mor b c),
     monomorphism m → monomorphism n → monomorphism (C.comp n m) := by
   intro m n monoM monoN _x _o _p h
