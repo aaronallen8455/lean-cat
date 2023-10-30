@@ -885,7 +885,7 @@ theorem iso_left_adj : ∀ (C : Cat.{2, 1}) (D : Cat.{2, 1}) (F F' : Funct C D) 
     . sorry
   . sorry
     
--- Riehl Proposition 4.4.2
+-- Riehl Proposition 4.4.4
 def adj_comp {F : Funct C D} {G : Funct D C} {F' : Funct D E} {G' : Funct E D}
         (adj1 : Adjunction F G) (adj2 : Adjunction F' G')
           : Adjunction (funct_comp F' F) (funct_comp G G') :=
@@ -994,3 +994,66 @@ def adj_comp {F : Funct C D} {G : Funct D C} {F' : Funct D E} {G' : Funct E D}
       simp [I, funct_comp] at hhh
       rw [G.fmap_law, D.comp_assoc, ←hh', D.left_id, ←hh]
   }
+
+-- Riehl Prop 4.4.6
+def postcomp_adj {C D E : Cat} {F : Funct C D} {G : Funct D C} (adj : Adjunction F G) :
+  Adjunction (@postcomp_funct C D E F) (postcomp_funct G) :=
+  { unit :=
+    { eta := by
+        intro H
+        simp [funct_cat] at H
+        simp [I, funct_cat, funct_comp]
+        exact { eta := by
+                  intro a
+                  simp [postcomp_funct, funct_comp]
+                  exact adj.unit.eta (H.map_obj a)
+              , nt_law := by
+                  intro a b mor
+                  exact adj.unit.nt_law (H.map_mor mor)
+              }
+    , nt_law := by
+        intro a b mor
+        simp [*, funct_cat, funct_comp, postcomp_funct, I]
+        let h x := adj.unit.nt_law (mor.eta x)
+        simp [I, funct_comp] at h
+        conv =>
+          lhs
+          intro x
+          rw [h]
+    }
+  , counit :=
+    { eta := by
+        intro H
+        simp [funct_cat] at H
+        simp [I, funct_cat, funct_comp]
+        exact { eta := by
+                  intro a
+                  simp [postcomp_funct, funct_comp]
+                  exact adj.counit.eta (H.map_obj a)
+              , nt_law := by
+                  intro a b mor
+                  exact adj.counit.nt_law (H.map_mor mor)
+              }
+    , nt_law := by
+        intro a b mor
+        simp [*, funct_cat, funct_comp, postcomp_funct, I]
+        let h x := adj.counit.nt_law (mor.eta x)
+        simp [I, funct_comp] at h
+        conv =>
+          lhs
+          intro x
+          rw [h]
+    }
+  , tri_L := by
+      simp [whisker_left, horiz_nt_comp, I, postcomp_funct, funct_comp]
+      conv =>
+        lhs
+      sorry -- lean is bugging out here
+      --simp [*, id_nt, funct_cat, postcomp_funct, whisker_left]
+  , tri_R := by
+      sorry
+  }
+
+def precomp_adj {C D E : Cat} {F: Funct C D} {G : Funct D C} (adj : Adjunction F G) :
+  Adjunction (@precomp_funct C D E F) (precomp_funct G)
+  := sorry

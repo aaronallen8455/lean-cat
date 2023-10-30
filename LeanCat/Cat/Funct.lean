@@ -54,3 +54,48 @@ def funct_cat.{u1, u2, u3, u4} {Dom : Cat.{u1, u2}} {Cod : Cat.{u3, u4}}
 def presheaves.{u1, u2} (C : Cat.{u1, u2+1}) :
       Cat.{max 1 (u2+1) (u2+2) u2 u1, max u1 (u2+1)} :=
   @funct_cat.{u1, u2+1, u2+2, u2+1} (Op C) type_cat.{u2}
+
+def precomp_funct {C D E : Cat} (F : Funct C D) : Funct (@funct_cat D E) (@funct_cat C E) :=
+  { map_obj := λ G => funct_comp G F
+  , map_mor := by
+      simp [*, funct_cat]
+      intro x y α
+      exact { eta := λ c => α.eta (F.map_obj c)
+            , nt_law := λ mor => α.nt_law (F.map_mor mor)
+            }
+  , fmap_id := by
+      intro G
+      simp [funct_cat, funct_comp]
+      conv =>
+        lhs
+        intro c
+        rw [G.fmap_id]
+      conv =>
+        rhs
+        intro a
+        rw [F.fmap_id, G.fmap_id]
+  , fmap_law := by simp [funct_cat]
+  }
+
+def postcomp_funct {C D E : Cat} (F : Funct C D) : Funct (@funct_cat E C) (@funct_cat E D) :=
+  { map_obj := λ G => funct_comp F G
+  , map_mor := by
+      simp [*, funct_cat]
+      intro x y α
+      exact { eta := λ c => F.map_mor $ α.eta c
+            , nt_law := by
+                intro a b mor
+                simp [*, funct_comp]
+                rw [F.fmap_law, α.nt_law mor, ←F.fmap_law]
+            }
+  , fmap_id := by
+      intro G
+      simp [funct_cat, funct_comp]
+  , fmap_law := by
+      intro G H I α β
+      simp [funct_cat]
+      conv =>
+        lhs
+        intro x
+        rw [F.fmap_law]
+  }

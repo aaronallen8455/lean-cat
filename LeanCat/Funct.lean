@@ -1,5 +1,6 @@
 import LeanCat.Cat.Set
 import LeanCat.Mor
+import LeanCat.Cat.Funct
 
 -- Identity functor
 def I (C : Cat) : Funct C C :=
